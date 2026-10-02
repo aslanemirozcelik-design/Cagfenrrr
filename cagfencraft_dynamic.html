@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ÇağfenCraft: Dinamik Sürüm (Canlı Sorular)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #00f3ff;
+            --secondary: #ff003c;
+            --glass: rgba(10, 15, 30, 0.75);
+            --border: rgba(0, 243, 255, 0.4);
+        }
+        body, html { margin: 0; padding: 0; height: 100%; background-color: #050510; font-family: 'Rajdhani', sans-serif; user-select: none; color: white; overflow: hidden; }
+        
+        .bg-blob { position: absolute; border-radius: 50%; filter: blur(90px); z-index: 0; opacity: 0.6; animation: breathe 6s infinite alternate; pointer-events: none;}
+        .blob-1 { width: 40vw; height: 40vw; background: #002244; top: -5vw; left: -5vw; }
+        .blob-2 { width: 30vw; height: 30vw; background: #33001b; bottom: -5vw; right: -5vw; }
+        @keyframes breathe { 0% { transform: scale(1); } 100% { transform: scale(1.1); } }
+
+        .glass-panel { background: var(--glass); padding: 40px; border-radius: 20px; border: 1px solid var(--border); box-shadow: 0 0 30px rgba(0,243,255,0.2), inset 0 0 15px rgba(0,243,255,0.1); text-align: center; z-index: 101; backdrop-filter: blur(15px); }
+
+        #login-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; z-index: 100; transition: 0.5s ease-in-out; }
+        .login-box h2 { font-family: 'Orbitron', sans-serif; font-size: 36px; margin: 0 0 10px 0; color: #fff; text-shadow: 0 0 10px var(--primary); }
+        .login-box p { color: #88ccff; font-size: 20px; margin-bottom: 25px; }
+        .login-box input { width: 80%; padding: 12px; font-size: 20px; font-family: 'Rajdhani', sans-serif; font-weight: bold; background: rgba(0,0,0,0.6); border: 2px solid var(--border); color: #fff; border-radius: 8px; text-align: center; margin-bottom: 20px; outline: none; transition: 0.3s; }
+        .login-box input:focus { border-color: var(--primary); box-shadow: 0 0 15px rgba(0,243,255,0.6); }
+        .login-box button { padding: 12px 35px; font-size: 22px; font-family: 'Orbitron', sans-serif; font-weight: bold; color: #050510; background: linear-gradient(45deg, var(--primary), #00a2ff); border: none; border-radius: 8px; cursor: pointer; transition: 0.2s; box-shadow: 0 0 15px rgba(0,243,255,0.5); }
+        .login-box button:hover { transform: scale(1.05); box-shadow: 0 0 30px rgba(0,243,255,0.8); }
+
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 50; display: none; opacity: 0; transition: opacity 0.5s; flex-direction: column; justify-content: center; align-items: center;}
+        
+        .top-bar { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 80%; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.6); padding: 10px 25px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(8px); z-index: 60;}
+        .stat { font-family: 'Orbitron', sans-serif; font-size: 20px; font-weight: bold; }
+        .stat span { color: var(--primary); text-shadow: 0 0 8px var(--primary); }
+        
+        .progress-container { width: 40%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
+        #progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, var(--primary), #00ff88); box-shadow: 0 0 10px var(--primary); transition: width 0.3s; }
+
+        #leaderboard { position: absolute; top: 80px; right: 20px; background: rgba(10, 15, 30, 0.85); padding: 15px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 5px 20px rgba(0,0,0,0.5); min-width: 220px; z-index: 60; backdrop-filter: blur(10px);}
+        #leaderboard h3 { margin: 0 0 10px 0; font-family: 'Orbitron', sans-serif; color: var(--primary); font-size: 16px; border-bottom: 1px solid var(--border); padding-bottom: 5px;}
+        #lb-list { list-style: none; padding: 0; margin: 0; font-size: 15px; }
+        #lb-list li { margin-bottom: 8px; display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px;}
+
+        .game-container { width: 90%; max-width: 800px; text-align: center; z-index: 55; margin-top: 40px;}
+        .logo { max-width: 140px; margin-bottom: 25px; filter: drop-shadow(0 0 15px rgba(255,255,255,0.5)); transition: 0.3s;}
+        #question-box { font-size: 32px; font-weight: bold; padding: 30px; margin-bottom: 40px; letter-spacing: 1px; color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.3); }
+        .button-container { display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; }
+        
+        .neon-btn { flex: 1; min-width: 250px; padding: 25px 30px; font-size: 26px; font-family: 'Rajdhani', sans-serif; font-weight: bold; border-radius: 15px; cursor: pointer; transition: all 0.2s; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); }
+        .btn-red { border: 2px solid var(--secondary); color: var(--secondary); box-shadow: 0 0 20px rgba(255,0,60,0.3), inset 0 0 10px rgba(255,0,60,0.2); }
+        .btn-red:hover { background: var(--secondary); color: white; box-shadow: 0 0 40px var(--secondary); transform: translateY(-5px) scale(1.02); }
+        .btn-red:active { transform: scale(0.95); }
+        
+        .btn-blue { border: 2px solid var(--primary); color: var(--primary); box-shadow: 0 0 20px rgba(0,243,255,0.3), inset 0 0 10px rgba(0,243,255,0.2); }
+        .btn-blue:hover { background: var(--primary); color: #050510; box-shadow: 0 0 40px var(--primary); transform: translateY(-5px) scale(1.02); }
+        .btn-blue:active { transform: scale(0.95); }
+        .btn-disabled { pointer-events: none; opacity: 0.7; transform: scale(0.98) !important; }
+
+        @keyframes shake { 0%,100%{transform:translate(0,0)} 20%{transform:translate(-5px,5px)} 40%{transform:translate(5px,-5px)} 60%{transform:translate(-5px,-5px)} 80%{transform:translate(5px,5px)} }
+        .error-shake { animation: shake 0.4s; box-shadow: inset 0 0 120px rgba(255,0,0,0.6) !important; }
+        .success-glow { box-shadow: inset 0 0 120px rgba(0,255,100,0.6) !important; }
+
+        @media (max-width: 768px) {
+            .button-container { flex-direction: column; gap: 15px; }
+            .neon-btn { padding: 18px; font-size: 22px; }
+            #question-box { font-size: 24px; padding: 20px; margin-bottom: 25px; }
+            .logo { max-width: 100px; margin-bottom: 15px; }
+            .top-bar { width: 90%; padding: 10px; font-size: 16px; top: 10px; }
+            .stat { font-size: 16px; }
+            #leaderboard { display: none; }
+            #ui-layer { padding-top: 60px; justify-content: flex-start; overflow-y: auto; display: block; }
+            .game-container { margin: 30px auto; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="bg-blob blob-1"></div>
+<div class="bg-blob blob-2"></div>
+
+<div id="login-screen">
+    <div class="glass-panel login-box" id="panel">
+        <h2>ÇAĞFEN YAZILIM AĞI</h2>
+        <p>Bulut Tabanlı Sürüm (Canlı Sorular)</p>
+        <input type="text" id="playerName" placeholder="Öğrenci Adı Soyadı" autocomplete="off">
+        <br>
+        <button id="start-btn" onclick="startGame()">Sisteme Giriş Yap</button>
+    </div>
+</div>
+
+<div id="ui-layer">
+    <div class="top-bar">
+        <div class="stat">SKOR: <span id="score">0</span></div>
+        <div class="progress-container"><div id="progress-bar"></div></div>
+        <div class="stat">SORU: <span id="q-count">1</span>/<span id="total-q">?</span></div>
+    </div>
+    
+    <div id="leaderboard">
+        <h3>🏆 YEREL ELİT LİSTE</h3>
+        <ul id="lb-list"><li>Henüz kayıt yok...</li></ul>
+    </div>
+    
+    <div class="game-container">
+        <img src="indir.png" alt="Çağfen Koleji Logo" class="logo">
+        <div id="question-box" class="glass-panel">Yükleniyor...</div>
+        
+        <div class="button-container">
+            <button id="btn-a" class="neon-btn btn-red" onclick="checkAnswer(1)">Seçenek A</button>
+            <button id="btn-b" class="neon-btn btn-blue" onclick="checkAnswer(2)">Seçenek B</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ==========================================
+// SES MOTORU
+// ==========================================
+let audioCtx;
+function initAudio() {
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+}
+function playSound(type) {
+    if(!audioCtx) return;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    const now = audioCtx.currentTime;
+    
+    if (type === 'correct') {
+        osc.type = 'triangle'; osc.frequency.setValueAtTime(440, now);
+        osc.frequency.setValueAtTime(659.25, now + 0.2);
+        gain.gain.setValueAtTime(0.3, now); gain.gain.linearRampToValueAtTime(0, now + 0.4);
+        osc.start(now); osc.stop(now + 0.4);
+    } else if (type === 'wrong') {
+        osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now);
+        osc.frequency.exponentialRampToValueAtTime(100, now + 0.3);
+        gain.gain.setValueAtTime(0.3, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+        osc.start(now); osc.stop(now + 0.4);
+    }
+}
+
+// ==========================================
+// İNTERNETTEN SORU ÇEKME MANTIĞI (BULUT SİSTEMİ)
+// ==========================================
+let questions = [];
+let currentQuestion = 0;
+let score = 0;
+let playerName = "";
+
+async function startGame() {
+    const input = document.getElementById("playerName").value;
+    if(!input.trim()) return alert("Adınızı giriniz!");
+    
+    const startBtn = document.getElementById("start-btn");
+    startBtn.innerText = "Sorular İnternetten Çekiliyor...";
+    startBtn.style.pointerEvents = "none";
+
+    try {
+        // Okul interneti eski soruları hatırlamasın diye sonuna saat ekliyoruz (cache bypass)
+        const response = await fetch('questions.json?v=' + new Date().getTime());
+        
+        if(!response.ok) throw new Error("questions.json bulunamadı");
+        
+        questions = await response.json();
+        
+        // Gelen soruları karıştır
+        for (let i = questions.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [questions[i], questions[j]] = [questions[j], questions[i]];
+        }
+        
+    } catch (error) {
+        console.error(error);
+        alert("HATA: Sorular internetten çekilemedi! Lütfen GitHub deponuza 'questions.json' adlı dosyayı yüklediğinizden emin olun.");
+        startBtn.innerText = "Sisteme Giriş Yap";
+        startBtn.style.pointerEvents = "auto";
+        return; // Hata varsa oyunu başlatma
+    }
+
+    playerName = input.trim();
+    initAudio(); 
+    playSound('correct'); 
+    
+    document.getElementById("login-screen").style.opacity = "0";
+    setTimeout(() => { 
+        document.getElementById("login-screen").style.display = "none"; 
+        
+        const isMobile = window.innerWidth <= 768;
+        const ui = document.getElementById("ui-layer"); 
+        ui.style.display = isMobile ? "block" : "flex"; 
+        setTimeout(()=> ui.style.opacity = "1", 50);
+        
+        // Toplam soru sayısını UI'a yazdır (Dinamik)
+        document.getElementById("total-q").innerText = questions.length;
+        
+        renderLeaderboard();
+        loadQuestion();
+    }, 500);
+}
+
+function loadQuestion() {
+    if(currentQuestion >= questions.length) {
+        document.getElementById("question-box").innerHTML = "SİMÜLASYON TAMAMLANDI<br><span style='color:var(--primary)'>Tüm soruları bitirdiniz.</span>";
+        document.querySelector('.button-container').style.display = 'none';
+        saveScore(); return;
+    }
+    
+    const q = questions[currentQuestion];
+    document.getElementById("question-box").innerHTML = q.q;
+    
+    const btnA = document.getElementById("btn-a");
+    const btnB = document.getElementById("btn-b");
+    
+    btnA.innerText = q.a;
+    btnB.innerText = q.b;
+    
+    btnA.classList.remove("btn-disabled");
+    btnB.classList.remove("btn-disabled");
+    
+    document.getElementById("q-count").innerText = currentQuestion + 1;
+    document.getElementById("progress-bar").style.width = ((currentQuestion) / questions.length) * 100 + "%";
+}
+
+function checkAnswer(choice) {
+    const isCorrect = choice === questions[currentQuestion].correct;
+    
+    document.getElementById("btn-a").classList.add("btn-disabled");
+    document.getElementById("btn-b").classList.add("btn-disabled");
+    
+    if(isCorrect) {
+        playSound('correct'); 
+        score += 10; 
+        document.getElementById("score").innerText = score;
+        document.body.classList.add('success-glow'); 
+        setTimeout(() => document.body.classList.remove('success-glow'), 400);
+    } else {
+        playSound('wrong');
+        document.body.classList.add('error-shake'); 
+        setTimeout(() => document.body.classList.remove('error-shake'), 400);
+    }
+    
+    setTimeout(() => {
+        currentQuestion++; 
+        loadQuestion();
+    }, 800);
+}
+
+// ==========================================
+// LİDERLİK TABLOSU
+// ==========================================
+function saveScore() {
+    let scores = JSON.parse(localStorage.getItem("cagfencraft_scores") || "[]");
+    scores.push({name: playerName, score: score});
+    scores.sort((a,b) => b.score - a.score);
+    scores = scores.slice(0, 6);
+    localStorage.setItem("cagfencraft_scores", JSON.stringify(scores));
+    renderLeaderboard();
+}
+
+function renderLeaderboard() {
+    const list = document.getElementById("lb-list");
+    let scores = JSON.parse(localStorage.getItem("cagfencraft_scores") || "[]");
+    if(scores.length === 0) {
+        list.innerHTML = "<li>Henüz kayıt yok...</li>";
+        return;
+    }
+    list.innerHTML = "";
+    scores.forEach((e, i) => { 
+        list.innerHTML += `<li><span>${i+1}. ${e.name}</span> <span>${e.score} P</span></li>`; 
+    });
+}
+</script>
+</body>
+</html>
